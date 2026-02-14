@@ -1,0 +1,623 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>🤖 OnboardBot — New Hire Onboarding Accelerator</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+  <style>
+    /* ── Reset & Base ─────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --surface2: #1c2333;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+      --accent: #58a6ff;
+      --accent-glow: rgba(88, 166, 255, .15);
+      --green: #3fb950;
+      --green-glow: rgba(63, 185, 80, .15);
+      --yellow: #d29922;
+      --red: #f85149;
+      --purple: #bc8cff;
+      --radius: 12px;
+      --font: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      --mono: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+    }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ───────────────────────────── */
+    .app { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* ── Header ───────────────────────────── */
+    .header {
+      text-align: center;
+      padding: 2.5rem 0 2rem;
+    }
+    .header .logo { font-size: 3.5rem; margin-bottom: .5rem; }
+    .header h1 { font-size: 2rem; font-weight: 700; }
+    .header h1 span { color: var(--accent); }
+    .header p { color: var(--text-dim); font-size: 1.05rem; margin-top: .35rem; }
+    .badges { display: flex; gap: .5rem; justify-content: center; margin-top: 1rem; flex-wrap: wrap; }
+    .badge {
+      font-size: .75rem; padding: .25rem .65rem; border-radius: 999px;
+      border: 1px solid var(--border); color: var(--text-dim); background: var(--surface);
+    }
+    .badge.accent { border-color: var(--accent); color: var(--accent); background: var(--accent-glow); }
+    .badge.green  { border-color: var(--green);  color: var(--green);  background: var(--green-glow); }
+
+    /* ── Card ─────────────────────────────── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+    .card h2 { font-size: 1.15rem; margin-bottom: 1rem; display: flex; align-items: center; gap: .5rem; }
+
+    /* ── Form ─────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+    }
+    @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+    .form-group { display: flex; flex-direction: column; gap: .35rem; }
+    .form-group.full { grid-column: 1 / -1; }
+    .form-group label { font-size: .85rem; color: var(--text-dim); font-weight: 500; }
+    .form-group input, .form-group select {
+      padding: .65rem .85rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: .95rem;
+      font-family: var(--font);
+      transition: border-color .2s;
+    }
+    .form-group input:focus, .form-group select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-glow);
+    }
+    .form-group input::placeholder { color: #484f58; }
+
+    .toggle-row {
+      grid-column: 1 / -1;
+      display: flex; gap: 1.5rem; flex-wrap: wrap; margin-top: .25rem;
+    }
+    .toggle-row label { display: flex; align-items: center; gap: .5rem; cursor: pointer; font-size: .9rem; color: var(--text-dim); }
+    .toggle-row input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; }
+
+    /* ── Button ────────────────────────────── */
+    .btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .75rem 1.75rem;
+      border: none; border-radius: 8px;
+      font-size: 1rem; font-weight: 600; font-family: var(--font);
+      cursor: pointer; transition: all .2s;
+    }
+    .btn-primary {
+      background: var(--accent); color: #fff;
+      box-shadow: 0 2px 12px var(--accent-glow);
+    }
+    .btn-primary:hover { background: #79c0ff; transform: translateY(-1px); }
+    .btn-primary:disabled { opacity: .5; cursor: not-allowed; transform: none; }
+    .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { border-color: var(--accent); }
+
+    .actions { display: flex; gap: .75rem; margin-top: 1.25rem; justify-content: flex-end; }
+
+    /* ── Pipeline Steps ───────────────────── */
+    .pipeline { display: none; }
+    .pipeline.active { display: block; }
+
+    .step {
+      display: flex; align-items: flex-start; gap: 1rem;
+      padding: 1rem; border-radius: 8px;
+      margin-bottom: .75rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      transition: all .3s;
+    }
+    .step.running { border-color: var(--accent); background: var(--accent-glow); }
+    .step.done { border-color: var(--green); }
+    .step.error { border-color: var(--red); }
+
+    .step-icon {
+      width: 36px; height: 36px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem; flex-shrink: 0;
+      background: var(--surface2); border: 1px solid var(--border);
+    }
+    .step.running .step-icon { border-color: var(--accent); }
+    .step.done    .step-icon { background: var(--green-glow); border-color: var(--green); }
+    .step.error   .step-icon { background: rgba(248,81,73,.15); border-color: var(--red); }
+
+    .step-body { flex: 1; }
+    .step-title { font-weight: 600; font-size: .95rem; }
+    .step-desc  { font-size: .85rem; color: var(--text-dim); margin-top: .15rem; }
+    .step-details {
+      font-size: .8rem; color: var(--text-dim); margin-top: .5rem;
+      font-family: var(--mono); background: var(--surface2); padding: .5rem .75rem;
+      border-radius: 6px; display: none;
+    }
+    .step.done .step-details, .step.error .step-details { display: block; }
+
+    /* ── Spinner ───────────────────────────── */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 18px; height: 18px; border: 2px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin .6s linear infinite;
+    }
+
+    /* ── Results ───────────────────────────── */
+    .results { display: none; }
+    .results.active { display: block; }
+
+    .result-header {
+      display: flex; justify-content: space-between; align-items: center;
+      flex-wrap: wrap; gap: 1rem;
+    }
+    .result-stats {
+      display: flex; gap: 1.5rem; flex-wrap: wrap;
+    }
+    .stat { text-align: center; }
+    .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: .75rem; color: var(--text-dim); }
+
+    .guide-preview {
+      margin-top: 1.25rem;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 1.5rem;
+      max-height: 600px;
+      overflow-y: auto;
+      font-size: .9rem;
+      line-height: 1.7;
+    }
+    .guide-preview h1 { font-size: 1.4rem; margin: 1rem 0 .5rem; color: var(--accent); }
+    .guide-preview h2 { font-size: 1.15rem; margin: 1.25rem 0 .5rem; color: var(--purple); }
+    .guide-preview h3 { font-size: 1rem; margin: 1rem 0 .35rem; }
+    .guide-preview p { margin-bottom: .75rem; }
+    .guide-preview ul, .guide-preview ol { padding-left: 1.5rem; margin-bottom: .75rem; }
+    .guide-preview li { margin-bottom: .25rem; }
+    .guide-preview code {
+      background: var(--surface2); padding: .15rem .4rem; border-radius: 4px;
+      font-family: var(--mono); font-size: .85em;
+    }
+    .guide-preview pre {
+      background: var(--surface2); padding: 1rem; border-radius: 8px;
+      overflow-x: auto; margin-bottom: 1rem;
+    }
+    .guide-preview pre code { background: none; padding: 0; }
+    .guide-preview table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    .guide-preview th, .guide-preview td {
+      padding: .5rem .75rem; text-align: left;
+      border: 1px solid var(--border);
+    }
+    .guide-preview th { background: var(--surface2); font-weight: 600; }
+    .guide-preview blockquote {
+      border-left: 3px solid var(--accent); padding-left: 1rem;
+      color: var(--text-dim); margin-bottom: .75rem;
+    }
+    .guide-preview hr { border: none; border-top: 1px solid var(--border); margin: 1.5rem 0; }
+    .guide-preview a { color: var(--accent); text-decoration: none; }
+    .guide-preview a:hover { text-decoration: underline; }
+
+    /* ── Toast ─────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 2rem; right: 2rem;
+      background: var(--green); color: #fff;
+      padding: .75rem 1.25rem; border-radius: 8px;
+      font-weight: 600; font-size: .9rem;
+      transform: translateY(100px); opacity: 0;
+      transition: all .3s ease;
+      z-index: 999;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    /* ── Architecture Diagram ─────────────── */
+    .arch-diagram {
+      font-family: var(--mono);
+      font-size: .78rem;
+      line-height: 1.45;
+      background: var(--bg);
+      padding: 1.25rem;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      overflow-x: auto;
+      white-space: pre;
+      color: var(--text-dim);
+      margin-top: .75rem;
+    }
+    .arch-diagram .highlight { color: var(--accent); font-weight: 600; }
+    .arch-diagram .green { color: var(--green); }
+    .arch-diagram .purple { color: var(--purple); }
+    .arch-diagram .yellow { color: var(--yellow); }
+
+    /* ── Footer ────────────────────────────── */
+    .footer {
+      text-align: center; padding: 2rem 0; color: var(--text-dim);
+      font-size: .85rem; border-top: 1px solid var(--border); margin-top: 2rem;
+    }
+    .footer a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">🤖</div>
+    <h1><span>Onboard</span>Bot</h1>
+    <p>AI-Powered New Hire Onboarding Accelerator</p>
+    <div class="badges">
+      <span class="badge accent">GitHub Copilot</span>
+      <span class="badge green">MCP Integrated</span>
+      <span class="badge">Agents League @ TechConnect</span>
+    </div>
+  </div>
+
+  <!-- Architecture -->
+  <div class="card">
+    <h2>🏗️ How It Works</h2>
+    <div class="arch-diagram"><span class="highlight">User Input</span> (owner / repo / team / name)
+    │
+    ▼
+<span class="green">Step 1:</span> <span class="highlight">GitHub MCP</span>  ──→ Repo structure, docs, PRs, issues, discussions
+    │
+    ▼
+<span class="green">Step 2:</span> <span class="purple">Learn MCP</span>   ──→ Relevant tutorials &amp; code samples for tech stack
+    │
+    ▼
+<span class="green">Step 3:</span> <span class="yellow">WorkIQ MCP</span>  ──→ Teams discussions, key people, meetings, emails &amp; documents
+    │
+    ▼
+<span class="green">Step 4:</span> <span class="highlight">AI Synthesis</span> ──→ Comprehensive personalized onboarding guide
+    │
+    ▼
+<span class="green">Output:</span> 📄 Markdown guide saved &amp; rendered</div>
+  </div>
+
+  <!-- Input Form -->
+  <div class="card" id="formCard">
+    <h2>🚀 Generate Onboarding Guide</h2>
+    <form id="onboardForm">
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="owner">GitHub Owner / Org *</label>
+          <input type="text" id="owner" placeholder="e.g., microsoft" value="microsoft" required />
+        </div>
+        <div class="form-group">
+          <label for="repo">Repository Name *</label>
+          <input type="text" id="repo" placeholder="e.g., vscode" value="vscode" required />
+        </div>
+        <div class="form-group">
+          <label for="team">Team Name</label>
+          <input type="text" id="team" placeholder="e.g., VS Code Team (optional)" />
+        </div>
+        <div class="form-group">
+          <label for="name">New Hire Name</label>
+          <input type="text" id="name" placeholder="e.g., Jane Smith" value="Jane Smith" />
+        </div>
+        <div class="form-group">
+          <label for="model">AI Model</label>
+          <select id="model">
+            <option value="gpt-4.1">GPT-4.1</option>
+            <option value="claude-sonnet-4">Claude Sonnet 4</option>
+            <option value="gpt-4o">GPT-4o</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>&nbsp;</label>
+        </div>
+        <div class="toggle-row">
+          <label><input type="checkbox" id="skipTeams" /> Skip Teams / M365 context</label>
+          <label><input type="checkbox" id="skipDocs" /> Skip Microsoft Learn docs</label>
+        </div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn btn-secondary" onclick="fillExample()">📋 Load Example</button>
+        <button type="submit" class="btn btn-primary" id="generateBtn">🚀 Generate Guide</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Pipeline Progress -->
+  <div class="card pipeline" id="pipelineCard">
+    <h2>⚙️ Pipeline Progress</h2>
+    <div id="steps">
+      <div class="step" id="step1">
+        <div class="step-icon">📂</div>
+        <div class="step-body">
+          <div class="step-title">Repository Analysis</div>
+          <div class="step-desc">Scanning repo structure, tech stack, docs, PRs, issues</div>
+          <div class="step-details" id="step1-details"></div>
+        </div>
+      </div>
+      <div class="step" id="step2">
+        <div class="step-icon">📚</div>
+        <div class="step-body">
+          <div class="step-title">Microsoft Learn Docs</div>
+          <div class="step-desc">Fetching relevant tutorials, samples &amp; best practices</div>
+          <div class="step-details" id="step2-details"></div>
+        </div>
+      </div>
+      <div class="step" id="step3">
+        <div class="step-icon">💬</div>
+        <div class="step-body">
+          <div class="step-title">Team Context (M365)</div>
+          <div class="step-desc">Gathering Teams discussions, key people, meetings, emails &amp; documents</div>
+          <div class="step-details" id="step3-details"></div>
+        </div>
+      </div>
+      <div class="step" id="step4">
+        <div class="step-icon">✍️</div>
+        <div class="step-body">
+          <div class="step-title">Guide Generation</div>
+          <div class="step-desc">Synthesizing all data into a personalized onboarding guide</div>
+          <div class="step-details" id="step4-details"></div>
+        </div>
+      </div>
+    </div>
+    <div style="text-align: center; margin-top: 1rem;">
+      <span id="pipelineTimer" style="color: var(--text-dim); font-size: .85rem; font-family: var(--mono);"></span>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div class="card results" id="resultsCard">
+    <div class="result-header">
+      <h2>📊 Results</h2>
+      <div class="result-stats">
+        <div class="stat">
+          <div class="stat-value" id="statTech">0</div>
+          <div class="stat-label">Technologies</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statDocs">0</div>
+          <div class="stat-label">Docs Found</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statPeople">0</div>
+          <div class="stat-label">Key People</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statEmails">0</div>
+          <div class="stat-label">Email Insights</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statDocuments">0</div>
+          <div class="stat-label">Documents</div>
+        </div>
+        <div class="stat">
+          <div class="stat-value" id="statTime">0s</div>
+          <div class="stat-label">Time</div>
+        </div>
+      </div>
+    </div>
+    <div class="actions" style="margin-top: 1rem;">
+      <button class="btn btn-secondary" onclick="copyGuide()">📋 Copy Markdown</button>
+      <button class="btn btn-secondary" onclick="downloadGuide()">💾 Download .md</button>
+      <button class="btn btn-primary" onclick="resetForm()">🔄 New Guide</button>
+    </div>
+    <div class="guide-preview" id="guidePreview"></div>
+  </div>
+
+  <!-- Footer -->
+  <div class="footer">
+    Built with ❤️ using <a href="https://github.com/features/copilot">GitHub Copilot</a> +
+    <a href="https://modelcontextprotocol.io/">MCP</a> at
+    <a href="https://github.com/microsoft/agentsleague-techconnect">Agents League @ TechConnect 2026</a>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+  // ── State ──────────────────────────────
+  let guideMarkdown = "";
+  let timerInterval = null;
+  let startTime = 0;
+
+  // ── Form Submit ────────────────────────
+  document.getElementById("onboardForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    await generateGuide();
+  });
+
+  async function generateGuide() {
+    const owner = document.getElementById("owner").value.trim();
+    const repo = document.getElementById("repo").value.trim();
+    const team = document.getElementById("team").value.trim() || repo;
+    const name = document.getElementById("name").value.trim() || "New Team Member";
+    const skipTeams = document.getElementById("skipTeams").checked;
+    const skipDocs = document.getElementById("skipDocs").checked;
+
+    if (!owner || !repo) { showToast("⚠️ Owner and Repo are required"); return; }
+
+    // Show pipeline
+    document.getElementById("pipelineCard").classList.add("active");
+    document.getElementById("resultsCard").classList.remove("active");
+    document.getElementById("generateBtn").disabled = true;
+
+    // Reset steps
+    document.querySelectorAll(".step").forEach(s => { s.className = "step"; });
+    document.querySelectorAll("[id$='-details']").forEach(d => { d.textContent = ""; d.style.display = "none"; });
+
+    // Start timer
+    startTime = Date.now();
+    timerInterval = setInterval(updateTimer, 100);
+
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ owner, repo, team, name, skipTeams, skipDocs }),
+      });
+
+      const data = await res.json();
+
+      // Animate pipeline steps
+      await animatePipeline(data);
+
+      // Show results
+      showResults(data);
+    } catch (err) {
+      showToast("❌ Error: " + err.message);
+      document.getElementById("generateBtn").disabled = false;
+    }
+
+    clearInterval(timerInterval);
+  }
+
+  async function animatePipeline(data) {
+    const steps = [
+      { id: "step1", details: `Tech: ${data.analysis?.techStack?.join(", ") || "detected"}\nFiles: ${data.analysis?.structure?.length || 0} | Docs: ${data.analysis?.docs?.length || 0}\nPRs: ${data.analysis?.prActivity?.length || 0} | Issues: ${data.analysis?.issues?.length || 0}` },
+      { id: "step2", details: `Resources found: ${data.learningResources?.reduce((s,r) => s + r.resources.length, 0) || 0}\nCategories: ${data.learningResources?.map(r => r.technology).join(", ") || "fetched"}` },
+      { id: "step3", details: `People: ${data.teamContext?.teamMembers?.length || 0}\nDiscussions: ${data.teamContext?.recentDiscussions?.length || 0}\nEmails: ${data.teamContext?.emailInsights?.length || 0}\nDocuments: ${data.teamContext?.relatedDocuments?.length || 0}\nEvents: ${data.teamContext?.upcomingEvents?.length || 0}` },
+      { id: "step4", details: `Guide size: ${((data.guide?.length || 0) / 1024).toFixed(1)} KB\nSections: 13 | Format: Markdown` },
+    ];
+
+    for (let i = 0; i < steps.length; i++) {
+      const el = document.getElementById(steps[i].id);
+      el.classList.add("running");
+      el.querySelector(".step-icon").innerHTML = '<div class="spinner"></div>';
+      await sleep(800 + Math.random() * 600);
+
+      el.classList.remove("running");
+      el.classList.add("done");
+      el.querySelector(".step-icon").innerHTML = "✅";
+      const detailsEl = document.getElementById(steps[i].id + "-details");
+      detailsEl.textContent = steps[i].details;
+      detailsEl.style.display = "block";
+    }
+  }
+
+  function showResults(data) {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    guideMarkdown = data.guide || "";
+
+    document.getElementById("statTech").textContent = data.analysis?.techStack?.length || 0;
+    document.getElementById("statDocs").textContent = data.analysis?.docs?.length || 0;
+    document.getElementById("statPeople").textContent = data.teamContext?.teamMembers?.length || 0;
+    document.getElementById("statEmails").textContent = data.teamContext?.emailInsights?.length || 0;
+    document.getElementById("statDocuments").textContent = data.teamContext?.relatedDocuments?.length || 0;
+    document.getElementById("statTime").textContent = elapsed + "s";
+
+    // Render markdown → HTML (basic)
+    document.getElementById("guidePreview").innerHTML = renderMarkdown(guideMarkdown);
+
+    document.getElementById("resultsCard").classList.add("active");
+    document.getElementById("generateBtn").disabled = false;
+
+    // Scroll to results
+    document.getElementById("resultsCard").scrollIntoView({ behavior: "smooth" });
+    showToast("🎉 Onboarding guide generated!");
+  }
+
+  // ── Markdown Renderer (lightweight) ────
+  function renderMarkdown(md) {
+    return md
+      // Code blocks
+      .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code class="lang-$1">$2</code></pre>')
+      // Inline code
+      .replace(/`([^`]+)`/g, '<code>$1</code>')
+      // Headings
+      .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+      .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+      .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+      .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+      // Bold & italic
+      .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\*(.+?)\*/g, '<em>$1</em>')
+      // Blockquote
+      .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+      // HR
+      .replace(/^---$/gm, '<hr>')
+      // Links
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>')
+      // Tables (basic)
+      .replace(/^\|(.+)\|$/gm, (match) => {
+        const cells = match.split('|').filter(c => c.trim()).map(c => c.trim());
+        if (cells.every(c => /^[-:]+$/.test(c))) return '';
+        const tag = match.includes('---') ? 'th' : 'td';
+        return '<tr>' + cells.map(c => `<${tag}>${c}</${tag}>`).join('') + '</tr>';
+      })
+      // Checkbox lists
+      .replace(/^- \[x\] (.+)$/gm, '<li>✅ $1</li>')
+      .replace(/^- \[ \] (.+)$/gm, '<li>⬜ $1</li>')
+      // Unordered lists
+      .replace(/^- (.+)$/gm, '<li>$1</li>')
+      // Wrap consecutive <li> in <ul>
+      .replace(/((?:<li>.*<\/li>\n?)+)/g, '<ul>$1</ul>')
+      // Wrap consecutive <tr> in <table>
+      .replace(/((?:<tr>.*<\/tr>\n?)+)/g, '<table>$1</table>')
+      // Paragraphs
+      .replace(/^(?!<[hultrpb]|$)(.+)$/gm, '<p>$1</p>')
+      // Clean up empty lines
+      .replace(/\n{3,}/g, '\n\n');
+  }
+
+  // ── Utils ──────────────────────────────
+  function fillExample() {
+    document.getElementById("owner").value = "microsoft";
+    document.getElementById("repo").value = "vscode";
+    document.getElementById("team").value = "VS Code Team";
+    document.getElementById("name").value = "Jane Smith";
+  }
+
+  function resetForm() {
+    document.getElementById("pipelineCard").classList.remove("active");
+    document.getElementById("resultsCard").classList.remove("active");
+    document.getElementById("formCard").scrollIntoView({ behavior: "smooth" });
+  }
+
+  function copyGuide() {
+    navigator.clipboard.writeText(guideMarkdown).then(() => showToast("📋 Copied to clipboard!"));
+  }
+
+  function downloadGuide() {
+    const blob = new Blob([guideMarkdown], { type: "text/markdown" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `onboarding-guide-${document.getElementById("owner").value}-${document.getElementById("repo").value}.md`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("💾 Downloaded!");
+  }
+
+  function showToast(msg) {
+    const el = document.getElementById("toast");
+    el.textContent = msg;
+    el.classList.add("show");
+    setTimeout(() => el.classList.remove("show"), 2500);
+  }
+
+  function updateTimer() {
+    const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    document.getElementById("pipelineTimer").textContent = `⏱️ ${elapsed}s`;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+
+</body>
+</html>
